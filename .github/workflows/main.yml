@@ -1,19 +1,33 @@
-name: Open a new issue
+name: CI -Tests must pass
 
-on: workflow_dispatch
+on:
+  pull_request:
+    branches: 
+      - main
+
+
+  workflow_dispatch:
 
 jobs:
-  open-new-issue:
+  tests:
+    name: Tests (Node${{ matrix.node-version}})
     runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        node-version: [20,22,24]
+    steps: 
+      - name: Checkout
+        uses: actions/checkout@v6
 
-    permissions:
-      contents: read
-      issues: write
+      - name: Setup Node.js
+        uses: actions/setup-node@v6
+        with: 
+          node-version: ${{ matrix.node-version}}
+          cache: npm
+            
+      - name: Install dependecies
+        run: npm ci
 
-    steps:
-      - run: |
-          gh issue --repo ${{github.repository}}\
-            create --title "Issue from job id ${{github.job}}"\
-            --body "${{github.actor}} triggered the creation of this issue. Github bot created it for them"
-        env:
-          GH_TOKEN: ${{secrets.GITHUB_TOKEN}}
+      - name: Run tests
+        run: npm test
